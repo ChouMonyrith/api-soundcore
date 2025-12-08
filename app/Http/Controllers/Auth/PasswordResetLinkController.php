@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Validation\ValidationException;
 
@@ -33,6 +34,8 @@ class PasswordResetLinkController extends Controller
                 'email' => [__($status)],
             ]);
         }
+
+        Log::info('Password reset link sent to email: ' . $request->input('email'));
 
         return response()->json(['status' => __($status)]);
     }

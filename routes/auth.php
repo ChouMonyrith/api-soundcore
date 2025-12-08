@@ -13,8 +13,11 @@ Route::post('/register', [RegisteredUserController::class, 'store'])
     ->name('register');
 
 Route::post('/login', [AuthenticatedSessionController::class, 'store'])
-    ->middleware('guest')
-    ->name('login');
+    ->middleware('guest');
+
+Route::get('/login', function () {
+    return redirect(config('app.frontend_url') . '/sign-in');
+})->name('login');
 
 Route::post('/forgot-password', [PasswordResetLinkController::class, 'store'])
     ->middleware('guest')
@@ -24,7 +27,7 @@ Route::post('/reset-password', [NewPasswordController::class, 'store'])
     ->middleware('guest')
     ->name('password.store');
 
-Route::get('/verify-email/{id}/{hash}', VerifyEmailController::class)
+Route::get('/email/verify/{id}/{hash}', VerifyEmailController::class)
     ->middleware(['auth', 'signed', 'throttle:6,1'])
     ->name('verification.verify');
 

@@ -32,7 +32,16 @@ class RegisteredUserController extends Controller
             'password' => Hash::make($request->string('password')),
         ]);
 
+        $user->assignRole('customer');
+
+        // Create default producer profile
+        $user->producerProfile()->create([
+            'display_name' => $user->name,
+        ]);
+
         event(new Registered($user));
+
+
 
         Auth::login($user);
 
