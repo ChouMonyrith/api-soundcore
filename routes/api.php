@@ -1,6 +1,9 @@
 <?php
 
+use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\CategoryController;
+use App\Http\Controllers\Api\DownloadController;
+use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\ProducerController;
 use App\Http\Controllers\Api\ProductController;
 use Illuminate\Http\Request;
@@ -21,6 +24,8 @@ Route::middleware(['auth:sanctum'])->group(function (){
     Route::get('user', function (Request $request) {
         return $request->user()->load(['roles', 'producerProfile']);
     });
+    
+    Route::get('my-downloads', [DownloadController::class, 'index']);
 
     Route::prefix('products')->group(function () {
         Route::post('/', [ProductController::class, 'store']);
@@ -46,4 +51,13 @@ Route::middleware(['auth:sanctum'])->group(function (){
             Route::post('{id}/reject', [\App\Http\Controllers\Api\ProducerRequestController::class, 'reject']);
         });
     });
+
+    // Orders
+    Route::get('orders/download/{product}', [OrderController::class, 'download']);
+    Route::post('orders/check-status', [OrderController::class, 'checkStatus']);
+    Route::apiResource('orders', OrderController::class)->only(['index', 'store', 'show']);
+
+    // Cart
+    Route::delete('carts', [CartController::class, 'clear']);
+    Route::apiResource('carts', CartController::class);
 });

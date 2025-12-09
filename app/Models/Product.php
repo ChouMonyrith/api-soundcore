@@ -24,6 +24,10 @@ class Product extends Model
         return $this->hasMany(Review::class);
     }
 
+    public function downloads() {
+        return $this->hasMany(Download::class);
+    }
+
     // Helper to calculate rating
     public function updateRating() {
         $this->rating = $this->reviews()->avg('rating') ?? 0;
