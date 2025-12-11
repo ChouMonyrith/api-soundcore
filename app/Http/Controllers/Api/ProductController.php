@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\ProductResource;
 use App\Models\Product;
+use App\Models\Review;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
@@ -17,6 +18,7 @@ class ProductController extends Controller
     use AuthorizesRequests;
     public function index(Request $request)
     {
+
         $query = Product::with(['category', 'producer']);
 
         if ($request->has('category')) {
@@ -88,6 +90,33 @@ class ProductController extends Controller
         ], 201);
     }
 
+    public function storeReview(Request $request, Product $product)
+    {
+        if (!auth()->user()->hasPurchased($product->id)) {
+            return response()->json([
+                'message' => 'You must purchase this product to leave a review.'
+            ], 403);
+        }
+
+        $validated = $request->validate([
+            'rating' => 'required|integer|min:1|max:5',
+            'comment' => 'required|string|max:1000',
+        ]);
+
+        $review = $product->reviews()->create([
+            'user_id' => auth()->id(),
+            'rating' => $validated['rating'],
+            'comment' => $validated['comment'],
+        ]);
+
+        $product->updateRating();
+
+        return response()->json([
+            'message' => 'Review submitted successfully',
+            'review' => $review
+        ], 201);
+    }
+    
     public function show(string $slug)
     {
 

@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Storage;
 
+
 class ProductResource extends JsonResource
 {
     /**
@@ -23,6 +24,8 @@ class ProductResource extends JsonResource
             'price' => (float) $this->price,
             'rating' => (float) $this->rating,
             'download_count' => $this->download_count,
+            'category_id' => $this->category_id,
+            'producer_profile_id' => $this->producer_profile_id,
             'category' => $this->category->name, // Assuming relationship exists
             'bpm' => $this->bpm, // If you added this column
             'key' => $this->key, // If you added this column
@@ -41,6 +44,7 @@ class ProductResource extends JsonResource
             ],
             
             'created_at' => $this->created_at->diffForHumans(),
+            'has_purchased' => auth('sanctum')->check() ? auth('sanctum')->user()->hasPurchased($this->id) : false,
             'reviews' => $this->whenLoaded('reviews', function () {
                 return $this->reviews->map(function ($review) {
                     return [
