@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\ProductResource;
+use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\Review;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -37,6 +38,39 @@ class ProductController extends Controller
             });
         }
 
+        if ($request->filled('min_price')) {
+            $query->where('price', '>=', $request->min_price);
+        }
+
+        if ($request->filled('max_price')) {
+            $query->where('price', '<=', $request->max_price);
+        }
+
+        if ($request->filled('tags')) {
+            $tags = array_filter(array_map('trim', explode(',', $request->tags)));
+
+            $query->where(function ($q) use ($tags) {
+                foreach ($tags as $tag) {
+                    $q->orWhereRaw(
+                        'LOWER(tags) LIKE ?',
+                        ['%' . strtolower($tag) . '%']
+                    );
+                }
+            });
+        }
+
+       
+        if($request->has("sort")){
+            $sort = $request->sort;
+
+            if($sort === "asc"){
+                $query->orderBy('price', 'asc');
+            }else if($sort === "desc"){
+                $query->orderBy('price', 'desc');
+            }else if($sort === "latest"){
+                $query->orderBy('created_at', 'desc');
+            }
+        }
         return ProductResource::collection($query->paginate(12));
     }
 
@@ -181,5 +215,31 @@ class ProductController extends Controller
         }
 
         abort(404);
+    }
+
+    public function trendingTags()
+    {
+        $items = OrderItem::with('product')
+                ->where('created_at', '>=', now()->subDays(30))
+                ->get();
+
+        $tagCounts = [];
+
+        foreach ($items as $item) {
+            $tags = explode(',', $item->product->tags);
+
+            foreach ($tags as $tag) {
+                $tag = trim($tag);
+                $tagCounts[$tag] = ($tagCounts[$tag] ?? 0) + $item->quantity;
+            }
+        }
+
+        arsort($tagCounts);
+
+        $trendingTags = array_slice(array_keys($tagCounts), 0, 6);
+
+        return response()->json([
+            'tags' => $trendingTags
+        ]);
     }
 }

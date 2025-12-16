@@ -13,6 +13,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Storage;
 class OrderController extends Controller
 {
     protected BakongKHQRService $bakong;
@@ -281,11 +282,11 @@ class OrderController extends Controller
         }
 
         // 2. Check if file exists
-        if (!\Illuminate\Support\Facades\Storage::disk('private')->exists($product->file_path)) {
+        if (!Storage::disk('private')->exists($product->file_path)) {
             abort(404, 'File not found on server.');
         }
 
         // 3. Serve the file
-        return \Illuminate\Support\Facades\Storage::disk('private')->download($product->file_path, $product->name . '.' . pathinfo($product->file_path, PATHINFO_EXTENSION));
+        return Storage::disk('private')->download($product->file_path, $product->name . '.' . pathinfo($product->file_path, PATHINFO_EXTENSION));
     }
 }

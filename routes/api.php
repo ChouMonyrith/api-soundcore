@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\DownloadController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\ProducerController;
+use App\Http\Controllers\Api\ProducerRequestController;
 use App\Http\Controllers\Api\ProductController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -14,6 +15,7 @@ Route::get('products', [ProductController::class, 'index']);
 Route::get('products/{product}', [ProductController::class, 'show']);
 Route::get('producers/{id}', [ProducerController::class, 'show']);
 Route::get('producers/{id}/sounds', [ProducerController::class, 'sounds']);
+Route::get('tags/trending', [ProductController::class, 'trendingTags']);
 
 Route::get('categories', [CategoryController::class, 'index']);
 Route::get('categories/{id}', [CategoryController::class, 'show']);
@@ -41,15 +43,15 @@ Route::middleware(['auth:sanctum'])->group(function (){
         // Route::get('{id}', [CategoryController::class, 'show']);
     });
 
-    // Producer Request Routes
+
     // Producer Request Routes
     Route::prefix('producer/request')->group(function () {
-        Route::post('/', [\App\Http\Controllers\Api\ProducerRequestController::class, 'store']); // User can request
+        Route::post('/', [ProducerRequestController::class, 'store']); 
         
         Route::middleware(['role:admin'])->group(function () {
-            Route::get('/', [\App\Http\Controllers\Api\ProducerRequestController::class, 'index']);
-            Route::post('{id}/approve', [\App\Http\Controllers\Api\ProducerRequestController::class, 'approve']);
-            Route::post('{id}/reject', [\App\Http\Controllers\Api\ProducerRequestController::class, 'reject']);
+            Route::get('/', [ProducerRequestController::class, 'index']);
+            Route::post('{id}/approve', [ProducerRequestController::class, 'approve']);
+            Route::post('{id}/reject', [ProducerRequestController::class, 'reject']);
         });
     });
 
