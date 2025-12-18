@@ -27,6 +27,11 @@ class CartController extends Controller
 
         $user = $request->user();
         $productId = $request->product_id;
+        
+        if ($user->hasPurchased($productId)) {
+            return response()->json(['message' => 'You have already purchased this product.'], 409);
+        }
+
         $licenseType = $request->input('license_type', 'standard');
         $quantity = $request->input('quantity', 1);
 

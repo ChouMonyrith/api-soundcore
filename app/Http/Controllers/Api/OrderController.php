@@ -74,6 +74,10 @@ class OrderController extends Controller
                     throw new \Exception("Product '{$productName}' is no longer available.");
                 }
 
+                if ($user->hasPurchased($product->id)) {
+                    throw new \Exception("You have already purchased '{$product->name}'.");
+                }
+
                 // Determine final price based on license type
                 $licenseMultiplier = $cartItem->license_type === 'extended' ? 1.5 : 1.0;
                 $itemPrice = $cartItem->product->price * $licenseMultiplier;

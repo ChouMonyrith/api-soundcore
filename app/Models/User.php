@@ -8,6 +8,7 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Log;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 
@@ -85,7 +86,9 @@ class User extends Authenticatable implements MustVerifyEmail
             ->whereHas('orderItems', function ($query) use ($productId) {
                 $query->where('product_id', $productId);
             })
-            ->where('status', 'paid') // Assuming 'completed' is the success status
+            ->where('status', 'paid') 
             ->exists();
     }
+
+    
 }

@@ -22,6 +22,8 @@ class OrderResource extends JsonResource
             'total' => $this->total,
             'subtotal' => $this->subtotal,
             'tax' => $this->tax,
+            'billing_email' => $this->billing_email,
+            'billing_name' => $this->billing_name,
             'payment_method' => $this->payment_method,
             'created_at' => $this->created_at,
             'items' => OrderItemResource::collection($this->whenLoaded('orderItems')),

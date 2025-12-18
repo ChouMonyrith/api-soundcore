@@ -17,25 +17,27 @@ use Illuminate\Support\Str;
 class ProductController extends Controller
 {
     use AuthorizesRequests;
+    
     public function index(Request $request)
     {
+        $user = $request->user('sanctum');
 
         $query = Product::with(['category', 'producer']);
 
         if ($request->has('category')) {
-            $query->whereHas('category', function ($q) use ($request) {
-                $q->where('slug', $request->category);
-            });
+            $query->whereHas('category', fn ($q) =>
+                $q->where('slug', $request->category)
+            );
         }
 
         if ($request->has('search')) {
-            $searchTerm = $request->search;
-            $query->where(function($q) use ($searchTerm) {
-                $q->where('name', 'LIKE', "%{$searchTerm}%")
-                  ->orWhere('slug', 'LIKE', "%{$searchTerm}%")
-                  ->orWhere('description', 'LIKE', "%{$searchTerm}%")
-                  ->orWhere('tags', 'LIKE', "%{$searchTerm}%");
-            });
+            $search = $request->search;
+            $query->where(fn ($q) =>
+                $q->where('name', 'LIKE', "%{$search}%")
+                ->orWhere('slug', 'LIKE', "%{$search}%")
+                ->orWhere('description', 'LIKE', "%{$search}%")
+                ->orWhere('tags', 'LIKE', "%{$search}%")
+            );
         }
 
         if ($request->filled('min_price')) {
@@ -51,28 +53,42 @@ class ProductController extends Controller
 
             $query->where(function ($q) use ($tags) {
                 foreach ($tags as $tag) {
-                    $q->orWhereRaw(
-                        'LOWER(tags) LIKE ?',
-                        ['%' . strtolower($tag) . '%']
-                    );
+                    $q->orWhereRaw('LOWER(tags) LIKE ?', ['%' . strtolower($tag) . '%']);
                 }
             });
         }
 
-       
-        if($request->has("sort")){
-            $sort = $request->sort;
-
-            if($sort === "asc"){
-                $query->orderBy('price', 'asc');
-            }else if($sort === "desc"){
-                $query->orderBy('price', 'desc');
-            }else if($sort === "latest"){
-                $query->orderBy('created_at', 'desc');
-            }
+        if ($request->filled('sort')) {
+            match ($request->sort) {
+                'asc' => $query->orderBy('price'),
+                'desc' => $query->orderByDesc('price'),
+                'latest' => $query->orderByDesc('created_at'),
+            };
         }
-        return ProductResource::collection($query->paginate(12));
+
+        $products = $query->paginate(12);
+
+        // ---- attach flags only if authenticated ----
+        if ($user) {
+            $purchasedIds = $user->orders()
+                ->where('status', 'paid')
+                ->whereHas('orderItems')
+                ->with('orderItems:order_id,product_id')
+                ->get()
+                ->pluck('orderItems.*.product_id')
+                ->flatten()
+                ->unique()
+                ->toArray();
+
+            $products->getCollection()->transform(function ($product) use ($purchasedIds) {
+                $product->has_purchased = in_array($product->id, $purchasedIds);
+                return $product;
+            });
+        }
+
+        return ProductResource::collection($products);
     }
+
 
     public function store(Request $request){
         if(!auth()->user()->can('upload products')){

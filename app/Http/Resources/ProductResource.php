@@ -6,7 +6,6 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Storage;
 
-
 class ProductResource extends JsonResource
 {
     /**
@@ -15,7 +14,7 @@ class ProductResource extends JsonResource
      * @return array<string, mixed>
      */
     public function toArray(Request $request): array
-    {
+    {       
         return [
             'id' => $this->id,
             'name' => $this->name,
@@ -31,7 +30,7 @@ class ProductResource extends JsonResource
             'key' => $this->key, // If you added this column
             'file_path' => $this->file_path ? url('api/storage/' . $this->file_path) : null,
             'tags' => $this->tags,
-            
+           
             // Image URL for Next.js <Image />
             'image_path' => $this->image_path 
                 ? url('api/storage/' . $this->image_path) 
@@ -42,7 +41,6 @@ class ProductResource extends JsonResource
                 'name' => $this->producer->display_name,
                 'avatar' => $this->producer->avatar_path,
             ],
-            
             'created_at' => $this->created_at->diffForHumans(),
             'has_purchased' => auth('sanctum')->check() ? auth('sanctum')->user()->hasPurchased($this->id) : false,
             'reviews' => $this->whenLoaded('reviews', function () {
