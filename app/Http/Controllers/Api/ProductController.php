@@ -37,8 +37,15 @@ class ProductController extends Controller
                 ->orWhere('slug', 'LIKE', "%{$search}%")
                 ->orWhere('description', 'LIKE', "%{$search}%")
                 ->orWhere('tags', 'LIKE', "%{$search}%")
+                ->orWhereHas('producer', fn ($q) =>
+                    $q->where('name', 'LIKE', "%{$search}%")
+                )
             );
         }
+
+        // if($request->has('popular')){
+        //     $query->orderBy('download_count', 'desc')->take(5)->get();
+        // }
 
         if ($request->filled('min_price')) {
             $query->where('price', '>=', $request->min_price);
@@ -60,9 +67,10 @@ class ProductController extends Controller
 
         if ($request->filled('sort')) {
             match ($request->sort) {
-                'asc' => $query->orderBy('price'),
-                'desc' => $query->orderByDesc('price'),
+                'price_asc' => $query->orderBy('price'),
+                'price_desc' => $query->orderByDesc('price'),
                 'latest' => $query->orderByDesc('created_at'),
+                'popular' => $query->orderByDesc('download_count'),
             };
         }
 
@@ -257,5 +265,15 @@ class ProductController extends Controller
         return response()->json([
             'tags' => $trendingTags
         ]);
+    }
+
+    public function popularProduct()
+    {
+        $products = Product::with('category', 'producer.user', 'reviews.user')
+            ->orderBy('download_count', 'desc')
+            ->take(4)
+            ->get();
+
+        return ProductResource::collection($products);
     }
 }

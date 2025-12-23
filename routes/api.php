@@ -12,9 +12,12 @@ use Illuminate\Support\Facades\Route;
 
 
 Route::get('products', [ProductController::class, 'index']);
+Route::get('products/popular', [ProductController::class, 'popularProduct']);
 Route::get('products/{product}', [ProductController::class, 'show']);
+
 Route::get('producers/{id}', [ProducerController::class, 'show']);
 Route::get('producers/{id}/sounds', [ProducerController::class, 'sounds']);
+
 Route::get('tags/trending', [ProductController::class, 'trendingTags']);
 
 Route::get('categories', [CategoryController::class, 'index']);
