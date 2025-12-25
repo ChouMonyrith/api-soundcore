@@ -3,14 +3,21 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 
 class Product extends Model
 {
+    use HasFactory;
     protected $fillable = [
         'producer_profile_id', 'category_id', 'name', 'slug', 'description', 
         'price', 'rating', 'download_count', 'image_path', 
         'audio_preview_path', 'file_path','bpm','key','tags',
+    ];
+
+    protected $casts = [
+        'tags' => 'array',
+        'rating' => 'float',
     ];
 
     public function producer() {

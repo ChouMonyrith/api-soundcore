@@ -58,6 +58,11 @@ Route::middleware(['auth:sanctum'])->group(function (){
         });
     });
 
+    // Dashboard
+    Route::get('dashboard/stats', [\App\Http\Controllers\Api\DashboardController::class, 'stats']);
+    Route::get('dashboard/recent-sales', [\App\Http\Controllers\Api\DashboardController::class, 'recentSales']);
+
+
     // Orders
     Route::get('orders/download/{product}', [OrderController::class, 'download']);
     Route::post('orders/check-status', [OrderController::class, 'checkStatus']);

@@ -3,9 +3,11 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Order extends Model
 {
+    use HasFactory;
     protected $fillable = [
         'transaction_id', 'user_id', 'subtotal', 'tax', 'total', 'status', 
         'payment_method', 'billing_name', 'billing_email',
