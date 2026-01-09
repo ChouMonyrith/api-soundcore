@@ -50,92 +50,103 @@ class OrderController extends Controller
     {
         $user = $request->user();
 
-        // Validate the request data
-        $request->validate([
-            'payment_method' => 'required|string|in:stripe,paypal,khqr', 
+        $validated = $request->validate([
+            'payment_method' => 'required|string|in:stripe,paypal,khqr',
         ]);
 
-        try{
+        try {
+            $result = DB::transaction(function () use ($user, $validated) {
 
-            $cartItems = $user->carts()->with(['product:id,price,name,slug,image_path'])->get(); 
+                $cartItems = $user->carts()
+                    ->with(['product:id,price,name,slug,image_path'])
+                    ->lockForUpdate()
+                    ->get();
 
-            if ($cartItems->isEmpty()) {
-                throw new \Exception('Cart is empty.');
-            }
-
-            $totalPrice = 0;
-            $orderItemsData = [];
-
-            foreach ($cartItems as $cartItem) {
-                $product = $cartItem->product;
-                // Check if sound exists AND has the required status
-                if (!$product) {
-                    $productName = $product ? ($product->name ?? 'Unknown (ID: '.$product->id.')') : 'Unknown';
-                    throw new \Exception("Product '{$productName}' is no longer available.");
+                if ($cartItems->isEmpty()) {
+                    throw new \RuntimeException('Cart is empty.');
                 }
 
-                if ($user->hasPurchased($product->id)) {
-                    throw new \Exception("You have already purchased '{$product->name}'.");
+                $totalPrice = 0;
+                $orderItemsData = [];
+
+                foreach ($cartItems as $cartItem) {
+                    $product = $cartItem->product;
+
+                    if (!$product) {
+                        throw new \RuntimeException('One or more products are no longer available.');
+                    }
+
+                    if ($user->hasPurchased($product->id)) {
+                        throw new \RuntimeException(
+                            "You have already purchased '{$product->name}'."
+                        );
+                    }
+
+                    $licenseMultiplier = $cartItem->license_type === 'extended' ? 1.5 : 1.0;
+                    $unitPrice = $product->price * $licenseMultiplier;
+
+                    $lineTotal = $unitPrice * $cartItem->quantity;
+                    $totalPrice += $lineTotal;
+
+                    $orderItemsData[] = [
+                        'product_id'  => $product->id,
+                        'price'       => $unitPrice,
+                        'license_type'=> $cartItem->license_type,
+                        'quantity'    => $cartItem->quantity,
+                    ];
                 }
 
-                // Determine final price based on license type
-                $licenseMultiplier = $cartItem->license_type === 'extended' ? 1.5 : 1.0;
-                $itemPrice = $cartItem->product->price * $licenseMultiplier;
+                // Generate KHQR (external service)
+                $khqr = $this->bakong->generateMerchantQR($totalPrice);
 
-                $totalPrice += $itemPrice * $cartItem->quantity; 
+                if (
+                    empty($khqr['md5']) ||
+                    empty($khqr['payload'])
+                ) {
+                    throw new \RuntimeException('Failed to generate Bakong QR.');
+                }
 
-                $orderItemsData[] = [
-                    'product_id' => $cartItem->product->id,
-                    'price' => $itemPrice, 
-                    'license_type' => $cartItem->license_type,
-                    'quantity' => $cartItem->quantity,
-                ];
-            }
-       
-            $khqr = $this->bakong->generateMerchantQR($totalPrice);
-
-            if(!isset($khqr['md5']) || !isset($khqr['payload'])) {
-                 Log::error('Bakong service failed to generate QR.', [
-                    'user_id' => $user->id,
-                    'total_price' => $totalPrice,
-                    'qr_result' => $khqr,
+                $order = Order::create([
+                    'transaction_id'   => uniqid('trx_'),
+                    'user_id'          => $user->id,
+                    'total'            => $totalPrice,
+                    'subtotal'         => $totalPrice,
+                    'tax'              => 0,
+                    'payment_method'   => $validated['payment_method'],
+                    'status'           => 'pending',
+                    'billing_email'    => $user->email,
+                    'md5'              => $khqr['md5'],
+                    'payment_metadata' => [
+                        'order_items_data' => $orderItemsData,
+                    ],
                 ]);
-                return response()->json(['message' => 'Failed to generate payment QR code.'], 500);
-            }
 
-            // Create the main Order record
-            $order = Order::create([
-                'transaction_id' => uniqid('trx_'),
-                'user_id' => $user->id,
-                'total' => $totalPrice,
-                'subtotal' => $totalPrice, // Assuming no tax for now or inclusive
-                'tax' => 0,
-                'payment_method' => $request->payment_method,
-                'status' => 'pending', 
-                'billing_email' => $user->email,
-                'md5' => $khqr['md5'],
-                'payment_metadata' => [
-                    'order_items_data' => $orderItemsData
-                ]
-            ]);
-
-            
+                return [
+                    'order'       => $order,
+                    'qr_payload'  => $khqr['payload'],
+                    'md5'         => $khqr['md5'],
+                    'total_price' => $totalPrice,
+                ];
+            });
 
             return response()->json([
-                'message'=> 'Bakong payment initiated successfully',
-                'qr_payload' => $khqr['payload'],
-                'md5' => $khqr['md5'],
-                'order_id' => $order->id,
-                'total_price' => $totalPrice,
+                'message'      => 'Bakong payment initiated successfully',
+                'qr_payload'   => $result['qr_payload'],
+                'md5'          => $result['md5'],
+                'order_id'     => $result['order']->id,
+                'total_price'  => $result['total_price'],
             ], 200);
 
-        }catch (\Exception $e) {
-            Log::error('Bakong payment initiation failed: ' . $e->getMessage(), [
+        } catch (\Throwable $e) {
+            Log::error('Bakong payment initiation failed', [
                 'user_id' => $user->id,
-                'request_data' => $request->all(),
-                'trace' => $e->getTraceAsString(),
+                'payment_method' => $request->payment_method,
+                'error' => $e->getMessage(),
             ]);
-            return response()->json(['message' => 'An error occurred while initiating payment: ' . $e->getMessage()], 500);
+
+            return response()->json([
+                'message' => 'An error occurred while initiating payment.',
+            ], 500);
         }
     }
 
@@ -232,7 +243,13 @@ class OrderController extends Controller
                             'status' => 'paid',
                             'paid_at' => now(), // Set the paid timestamp
                         ]);
+
+                        $user->producerProfile()->update([
+                            'sales_count' => DB::raw('sales_count + 1'),
+                        ]);
                     });
+
+                    
 
                     Log::info('Order finalized successfully from confirmed Bakong payment.', [
                         'order_id' => $order->id,

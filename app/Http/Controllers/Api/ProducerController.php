@@ -25,4 +25,12 @@ class ProducerController extends Controller
             
         return ProductResource::collection($products);
     }
+
+    public function topProducer(){
+        $producers = ProducerProfile::with('user')
+            ->orderBy('total_sales', 'desc')
+            ->take(10)
+            ->get();
+        return ProducerProfileResource::collection($producers);
+    }
 }
