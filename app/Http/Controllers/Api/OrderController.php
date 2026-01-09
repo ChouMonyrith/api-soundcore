@@ -308,6 +308,6 @@ class OrderController extends Controller
         }
 
         // 3. Serve the file
-        return Storage::disk('private')->download($product->file_path, $product->name . '.' . pathinfo($product->file_path, PATHINFO_EXTENSION));
+        return response()->download(storage_path('app/private/' . $product->file_path), $product->name . '.' . pathinfo($product->file_path, PATHINFO_EXTENSION));
     }
 }

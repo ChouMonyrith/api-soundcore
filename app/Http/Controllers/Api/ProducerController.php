@@ -28,8 +28,8 @@ class ProducerController extends Controller
 
     public function topProducer(){
         $producers = ProducerProfile::with('user')
-            ->orderBy('total_sales', 'desc')
-            ->take(10)
+            ->orderBy('sales_count', 'desc')
+            ->take(4)
             ->get();
         return ProducerProfileResource::collection($producers);
     }
