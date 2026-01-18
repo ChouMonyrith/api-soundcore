@@ -38,13 +38,37 @@ class ProducerRequestController extends Controller
         $validated = $request->validate([
             'display_name' => 'required|string|max:255',
             'bio' => 'nullable|string',
-            // add avatar validation if needed
+            'location' => 'nullable|string|max:255',
+            'website' => 'nullable|url|max:255',
+            'avatar' => 'nullable|image|max:2048', // 2MB max
+            'cover_image' => 'nullable|image|max:2048',
+            'social_links' => 'nullable|string', // Expecting JSON string from FormData
         ]);
+
+        $avatarPath = null;
+        if ($request->hasFile('avatar')) {
+            $avatarPath = $request->file('avatar')->store('producers/avatars', 'public');
+        }
+
+        $coverImagePath = null;
+        if ($request->hasFile('cover_image')) {
+            $coverImagePath = $request->file('cover_image')->store('producers/covers', 'public');
+        }
+
+        $socialLinks = [];
+        if (isset($validated['social_links'])) {
+             $socialLinks = json_decode($validated['social_links'], true) ?? [];
+        }
 
         $profile = ProducerProfile::create([
             'user_id' => $user->id,
             'display_name' => $validated['display_name'],
             'bio' => $validated['bio'] ?? null,
+            'location' => $validated['location'] ?? null,
+            'website' => $validated['website'] ?? null,
+            'avatar_path' => $avatarPath,
+            'cover_image_path' => $coverImagePath,
+            'social_links' => $socialLinks,
             'status' => 'pending',
         ]);
 

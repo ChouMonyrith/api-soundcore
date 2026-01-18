@@ -25,19 +25,16 @@ class ProductResource extends JsonResource
             'download_count' => $this->download_count,
             'category_id' => $this->category_id,
             'producer_profile_id' => $this->producer_profile_id,
-            'category' => $this->category->name, // Assuming relationship exists
-            'bpm' => $this->bpm, // If you added this column
-            'key' => $this->key, // If you added this column
+            'category' => $this->category->name,
+            'bpm' => $this->bpm,
+            'key' => $this->key,
             'file_path' => $this->file_path ? url('api/storage/' . $this->file_path) : null,
             'tags' => $this->tags,
-           
-            // Image URL for Next.js <Image />
-            'image_path' => $this->image_path 
-                ? url('api/storage/' . $this->image_path) 
+            'image_path' => $this->image_path
+                ? asset('storage/' . ltrim($this->image_path, '/'))
                 : null,
-            
-            // Artist details for the card
             'artist' => [
+                'id' => $this->producer->id,
                 'name' => $this->producer->display_name,
                 'avatar' => $this->producer->avatar_path,
             ],
@@ -53,7 +50,7 @@ class ProductResource extends JsonResource
                         'user' => [
                             'id' => $review->user->id,
                             'name' => $review->user->name,
-                            'avatar' => $review->user->avatar_path, // Assuming avatar_path exists on User model
+                            'avatar' => $review->user->avatar_path,
                         ],
                     ];
                 });

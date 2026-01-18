@@ -90,5 +90,8 @@ class User extends Authenticatable implements MustVerifyEmail
             ->exists();
     }
 
-    
+    public function following()
+    {
+        return $this->belongsToMany(ProducerProfile::class, 'follows', 'follower_id', 'producer_id');
+    }
 }

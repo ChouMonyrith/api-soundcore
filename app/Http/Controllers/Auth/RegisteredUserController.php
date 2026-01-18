@@ -34,16 +34,10 @@ class RegisteredUserController extends Controller
 
         $user->assignRole('customer');
 
-        // Create default producer profile
-        $user->producerProfile()->create([
-            'display_name' => $user->name,
-        ]);
-
         event(new Registered($user));
-
-
-
-        Auth::login($user);
+        
+        // Send verification email
+        $user->sendEmailVerificationNotification();
 
         return response()->noContent();
     }

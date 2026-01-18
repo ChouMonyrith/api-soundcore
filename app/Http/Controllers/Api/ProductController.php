@@ -106,17 +106,33 @@ class ProductController extends Controller
         }
         Log::info("Product created: ".json_encode($request->all()));
 
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'category_id' => 'required|exists:categories,id',
-            'price' => 'required|numeric|min:0',
-            'description' => 'required|string',
-            'audio_file' => 'required|file|mimes:mp3,wav,zip|max:50000', // 50MB
-            'image_path' => 'nullable|image|max:2048',
-            'bpm' => 'nullable|numeric',
-            'key' => 'nullable|string',
-            'tags' => 'nullable|string',
-        ]);
+        if($request->hasFile('audio_file')){
+            Log::info('Audio file mime: ' . $request->file('audio_file')->getMimeType());
+            Log::info('Audio file client mime: ' . $request->file('audio_file')->getClientMimeType());
+        }
+
+        if($request->hasFile('image_path')){
+            Log::info('Image file size: ' . $request->file('image_path')->getSize());
+            Log::info('Image file mime: ' . $request->file('image_path')->getMimeType());
+        }
+
+        try {
+            $validated = $request->validate([
+                'name' => 'required|string|max:255',
+                'category_id' => 'required|exists:categories,id',
+                'price' => 'required|numeric|min:0',
+                'description' => 'required|string',
+                // Allow broader mime types
+                'audio_file' => 'required|file|mimetypes:audio/mpeg,audio/wav,audio/x-wav,application/octet-stream|max:50000', 
+                'image_path' => 'nullable|image|max:10240', // Increased to 10MB just in case
+                'bpm' => 'nullable|numeric',
+                'key' => 'nullable|string',
+                'tags' => 'nullable|string',
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::error('Validation failed: ' . json_encode($e->errors()));
+            throw $e;
+        }
         
         
 
@@ -250,7 +266,8 @@ class ProductController extends Controller
         $tagCounts = [];
 
         foreach ($items as $item) {
-            $tags = explode(',', $item->product->tags);
+            $productTags = $item->product->tags;
+            $tags = is_array($productTags) ? $productTags : explode(',', $productTags ?? '');
 
             foreach ($tags as $tag) {
                 $tag = trim($tag);

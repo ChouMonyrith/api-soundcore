@@ -7,8 +7,14 @@ use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\ProducerController;
 use App\Http\Controllers\Api\ProducerRequestController;
 use App\Http\Controllers\Api\ProductController;
+use App\Http\Controllers\Api\ProfileController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+
+
+
+
+
 
 
 Route::get('products', [ProductController::class, 'index']);
@@ -24,6 +30,9 @@ Route::get('tags/trending', [ProductController::class, 'trendingTags']);
 Route::get('categories', [CategoryController::class, 'index']);
 Route::get('categories/{id}', [CategoryController::class, 'show']);
 Route::get('storage/{path}', [ProductController::class, 'serveFile'])->where('path', '.*');
+
+Route::get('/profiles/{id}', [ProfileController::class, 'show'])->whereNumber('id');
+Route::get('/profiles/{id}/sounds', [ProfileController::class, 'sounds'])->whereNumber('id');
 
 Route::middleware(['auth:sanctum'])->group(function (){
     
@@ -72,4 +81,8 @@ Route::middleware(['auth:sanctum'])->group(function (){
     // Cart
     Route::delete('carts', [CartController::class, 'clear']);
     Route::apiResource('carts', CartController::class);
+
+    //Profile
+    Route::get('/profiles/me', [ProfileController::class, 'me']);
+    Route::post('/profiles/{id}/follow', [ProfileController::class, 'toggleFollow']);
 });
