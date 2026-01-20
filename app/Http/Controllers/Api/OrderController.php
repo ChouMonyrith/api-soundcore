@@ -289,6 +289,9 @@ class OrderController extends Controller
     public function download(Request $request, Product $product)
     {
         $user = $request->user();
+        
+        // $product is already filtered/resolved by route binding withTrashed()
+
 
         // 1. Verify User has purchased this product and order is PAID
         $hasPurchased = $user->orders()
@@ -302,12 +305,14 @@ class OrderController extends Controller
             abort(403, 'You have not purchased this product.');
         }
 
-        // 2. Check if file exists
         if (!Storage::disk('private')->exists($product->file_path)) {
             abort(404, 'File not found on server.');
         }
 
         // 3. Serve the file
-        return response()->download(storage_path('app/private/' . $product->file_path), $product->name . '.' . pathinfo($product->file_path, PATHINFO_EXTENSION));
+        return response()->download(
+            Storage::disk('private')->path($product->file_path), 
+            $product->name . '.' . pathinfo($product->file_path, PATHINFO_EXTENSION)
+        );
     }
 }

@@ -74,7 +74,7 @@ Route::middleware(['auth:sanctum'])->group(function (){
 
 
     // Orders
-    Route::get('orders/download/{product}', [OrderController::class, 'download']);
+    Route::get('orders/download/{product}', [OrderController::class, 'download'])->withTrashed();
     Route::post('orders/check-status', [OrderController::class, 'checkStatus']);
     Route::apiResource('orders', OrderController::class)->only(['index', 'store', 'show']);
 

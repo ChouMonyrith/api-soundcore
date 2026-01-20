@@ -12,12 +12,12 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schedule;
 
 Schedule::call(function () {
-    $expirationTime = now()->subMinutes(3);
+    $expirationTime = now()->subMinutes(10);
     
     $deletedCount = Order::where('status', 'pending')
         ->where('payment_method', 'khqr')
         ->where('created_at', '<', $expirationTime)
-        ->delete();
+        ->update(['status' => 'expired']);
 
     if ($deletedCount > 0) {
         Log::info("Cleaned up {$deletedCount} expired KHQR orders.");

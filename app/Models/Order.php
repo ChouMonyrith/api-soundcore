@@ -11,7 +11,7 @@ class Order extends Model
     protected $fillable = [
         'transaction_id', 'user_id', 'subtotal', 'tax', 'total', 'status', 
         'payment_method', 'billing_name', 'billing_email',
-        'md5', 'payment_metadata', 'paid_at'
+        'md5', 'payment_metadata', 'paid_at', 'webhook_processed', 'last_webhook_event_id'
     ];
 
     protected $casts = [
@@ -25,5 +25,9 @@ class Order extends Model
 
     public function orderItems() {
         return $this->hasMany(OrderItem::class);
+    }
+
+    public function webhooks() {
+        return $this->hasMany(WebhookLog::class);
     }
 }

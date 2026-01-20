@@ -14,7 +14,9 @@ class DownloadController extends Controller
         $user = $request->user();
 
         // Fetch downloads for the user, including product details and producer
-        $downloads = Download::with(['product:id,name,slug,description,price,image_path,file_path,producer_profile_id', 'product.producer'])
+        $downloads = Download::with(['product' => function ($query) {
+            $query->withTrashed();
+        }, 'product.producer'])
             ->where('user_id', $user->id)
             ->orderBy('downloaded_at', 'desc')
             ->get();

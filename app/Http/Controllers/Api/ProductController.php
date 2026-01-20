@@ -8,6 +8,7 @@ use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\Review;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -123,7 +124,7 @@ class ProductController extends Controller
                 'price' => 'required|numeric|min:0',
                 'description' => 'required|string',
                 // Allow broader mime types
-                'audio_file' => 'required|file|mimetypes:audio/mpeg,audio/wav,audio/x-wav,application/octet-stream|max:50000', 
+                'audio_file' => 'required|file|mimetypes:audio/mpeg,audio/wav,audio/x-wav,application/octet-stream|max:1000000', 
                 'image_path' => 'nullable|image|max:10240', // Increased to 10MB just in case
                 'bpm' => 'nullable|numeric',
                 'key' => 'nullable|string',
@@ -260,6 +261,7 @@ class ProductController extends Controller
     public function trendingTags()
     {
         $items = OrderItem::with('product')
+                ->whereHas('product')
                 ->where('created_at', '>=', now()->subDays(30))
                 ->get();
 
