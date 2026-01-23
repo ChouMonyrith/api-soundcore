@@ -75,9 +75,9 @@ class ProductController extends Controller
             };
         }
 
-        $products = $query->paginate(12);
+        $limit = $request->input('limit', 8);
+        $products = $query->paginate($limit);
 
-        // ---- attach flags only if authenticated ----
         if ($user) {
             $purchasedIds = $user->orders()
                 ->where('status', 'paid')
@@ -291,6 +291,44 @@ class ProductController extends Controller
         $products = Product::with('category', 'producer.user', 'reviews.user')
             ->orderBy('download_count', 'desc')
             ->take(4)
+            ->get();
+
+        return ProductResource::collection($products);
+    }
+
+    public function relatedProduct(Request $request, string $slug)
+    {
+        $limit = $request->limit ?? 4;
+
+        $product = Product::where('slug', $slug)->firstOrFail();
+
+        $query = Product::query()
+            ->where('id', '!=', $product->id);
+
+        $query->where(function ($q) use ($product) {
+            
+            // 1. Tags
+            if ($product->tags) {
+                $tags = explode(',', $product->tags);
+                $q->orWhere(function ($subQ) use ($tags) {
+                    foreach ($tags as $tag) {
+                        $subQ->orWhere('tags', 'LIKE', "%{$tag}%");
+                    }
+                });
+            }
+
+            // 2. Category
+            if ($product->category_id) {
+                $q->orWhere('category_id', $product->category_id);
+            }
+
+            // 3. Producer
+            $q->orWhere('producer_profile_id', $product->producer_profile_id);
+        });
+
+        $products = $query->with('category', 'producer.user', 'reviews.user')
+            ->orderBy('download_count', 'desc')
+            ->take($limit)
             ->get();
 
         return ProductResource::collection($products);
