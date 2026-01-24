@@ -94,4 +94,14 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->belongsToMany(ProducerProfile::class, 'follows', 'follower_id', 'producer_id');
     }
+
+    public function likes()
+    {
+        return $this->belongsToMany(Product::class, 'likes', 'user_id', 'product_id')->withTimestamps();
+    }
+
+    public function collections()
+    {
+        return $this->hasMany(Collection::class);
+    }
 }

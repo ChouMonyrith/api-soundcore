@@ -42,4 +42,18 @@ class Product extends Model
         $this->save();
     }
 
+    public function likes() {
+        return $this->belongsToMany(User::class, 'likes', 'product_id', 'user_id')->withTimestamps();
+    }
+
+    public function collections() {
+        return $this->belongsToMany(Collection::class, 'collection_items', 'product_id', 'collection_id')->withTimestamps();
+    }
+
+    public function getIsLikedAttribute() {
+        if (auth('sanctum')->check()) {
+            return $this->likes()->where('user_id', auth('sanctum')->id())->exists();
+        }
+        return false;
+    }
 }

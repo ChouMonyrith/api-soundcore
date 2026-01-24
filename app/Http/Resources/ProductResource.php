@@ -40,6 +40,7 @@ class ProductResource extends JsonResource
             ],
             'created_at' => $this->created_at->diffForHumans(),
             'has_purchased' => auth('sanctum')->check() ? auth('sanctum')->user()->hasPurchased($this->id) : false,
+            'is_liked' => $this->is_liked,
             'reviews' => $this->whenLoaded('reviews', function () {
                 return $this->reviews->map(function ($review) {
                     return [

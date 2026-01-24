@@ -8,6 +8,8 @@ use App\Http\Controllers\Api\ProducerController;
 use App\Http\Controllers\Api\ProducerRequestController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\ProfileController;
+use App\Http\Controllers\CollectionController;
+use App\Http\Controllers\LikeController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -86,4 +88,13 @@ Route::middleware(['auth:sanctum'])->group(function (){
     //Profile
     Route::get('/profiles/me', [ProfileController::class, 'me']);
     Route::post('/profiles/{id}/follow', [ProfileController::class, 'toggleFollow']);
+
+    // Likes
+    Route::post('/products/{product}/like', [LikeController::class, 'toggleLike']);
+    Route::get('/me/likes', [LikeController::class, 'index']);
+
+    // Collections
+    Route::apiResource('collections', CollectionController::class);
+    Route::post('/collections/{collection}/products', [CollectionController::class, 'addProduct']);
+    Route::delete('/collections/{collection}/products/{product}', [CollectionController::class, 'removeProduct']);
 });
