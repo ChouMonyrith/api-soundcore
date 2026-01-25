@@ -8,8 +8,8 @@ use App\Http\Controllers\Api\ProducerController;
 use App\Http\Controllers\Api\ProducerRequestController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\ProfileController;
-use App\Http\Controllers\CollectionController;
-use App\Http\Controllers\LikeController;
+use App\Http\Controllers\Api\CollectionController;
+use App\Http\Controllers\Api\LikeController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -36,6 +36,7 @@ Route::get('storage/{path}', [ProductController::class, 'serveFile'])->where('pa
 
 Route::get('/profiles/{id}', [ProfileController::class, 'show'])->whereNumber('id');
 Route::get('/profiles/{id}/sounds', [ProfileController::class, 'sounds'])->whereNumber('id');
+Route::get('/profiles/{id}/collections', [ProfileController::class, 'collections'])->whereNumber('id');
 
 Route::middleware(['auth:sanctum'])->group(function (){
     

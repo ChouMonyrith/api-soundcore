@@ -1,30 +1,57 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Collection;
 use App\Models\Product;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
+
+use App\Http\Resources\CollectionResource;
 
 class CollectionController extends Controller
 {
     public function index()
     {
-        return Auth::user()->collections()->with('products')->get();
+        $collections = Auth::user()->collections()->with('products')->get();
+        return CollectionResource::collection($collections);
+    }
+
+    public function show(Collection $collection)
+    {
+        // Allow if public or owned by user
+        if (!$collection->is_public && $collection->user_id !== Auth::id()) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        return new CollectionResource($collection->load(['products', 'user']));
     }
 
     public function store(Request $request)
     {
-        $request->validate(['name' => 'required|string|max:255']);
+       
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'is_public' => 'required|boolean',
+            'cover_image' => 'nullable|image|max:10000'
+        ]);
+
+        $coverImagePath = null;
+        if ($request->hasFile('cover_image')) {
+            $coverImagePath = $request->file('cover_image')->store('collections', 'public');
+        }
 
         $collection = Auth::user()->collections()->create([
             'name' => $request->name,
             'description' => $request->description,
             'is_public' => $request->is_public ?? false,
+            'cover_image' => $coverImagePath,
         ]);
 
-        return response()->json($collection, 201);
+        return new CollectionResource($collection->load('user'));
     }
 
     public function update(Request $request, Collection $collection)
@@ -33,8 +60,18 @@ class CollectionController extends Controller
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        $collection->update($request->only(['name', 'description', 'is_public']));
-        return response()->json($collection);
+        $data = $request->only(['name', 'description', 'is_public']);
+
+        if ($request->hasFile('cover_image')) {
+            // Delete old image
+            if ($collection->cover_image) {
+                Storage::disk('public')->delete($collection->cover_image);
+            }
+            $data['cover_image'] = $request->file('cover_image')->store('collections', 'public');
+        }
+
+        $collection->update($data);
+        return new CollectionResource($collection);
     }
 
     public function destroy(Collection $collection)

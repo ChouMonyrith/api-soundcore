@@ -45,6 +45,21 @@ class ProfileController extends Controller
         return ProductResource::collection($products);
     }
 
+    // GET /api/profiles/{id}/collections
+    public function collections($id)
+    {
+        $profile = ProducerProfile::findOrFail($id);
+        
+        $query = $profile->user->collections()->with('products');
+
+        // If not the owner, show only public
+        if (request()->user('sanctum')?->id !== $profile->user_id) {
+            $query->where('is_public', true);
+        }
+
+        return $query->latest()->get();
+    }
+
     // POST /api/profiles/{id}/follow
     public function toggleFollow(Request $request, $id)
     {

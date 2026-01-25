@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Collection extends Model
 {
-    protected $fillable = ['user_id', 'name', 'description', 'is_public'];
+    protected $fillable = ['user_id', 'name', 'description', 'is_public', 'cover_image'];
 
     public function user()
     {
