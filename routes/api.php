@@ -13,12 +13,6 @@ use App\Http\Controllers\Api\LikeController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-
-
-
-
-
-
 Route::get('products', [ProductController::class, 'index']);
 Route::get('products/popular', [ProductController::class, 'popularProduct']);
 Route::get('products/{product}', [ProductController::class, 'show']);
@@ -37,6 +31,9 @@ Route::get('storage/{path}', [ProductController::class, 'serveFile'])->where('pa
 Route::get('/profiles/{id}', [ProfileController::class, 'show'])->whereNumber('id');
 Route::get('/profiles/{id}/sounds', [ProfileController::class, 'sounds'])->whereNumber('id');
 Route::get('/profiles/{id}/collections', [ProfileController::class, 'collections'])->whereNumber('id');
+
+Route::get('/collections/{collection}', [CollectionController::class, 'show']);
+Route::get('/collections/{collection}/sounds', [CollectionController::class, 'sounds']);
 
 Route::middleware(['auth:sanctum'])->group(function (){
     
@@ -95,7 +92,7 @@ Route::middleware(['auth:sanctum'])->group(function (){
     Route::get('/me/likes', [LikeController::class, 'index']);
 
     // Collections
-    Route::apiResource('collections', CollectionController::class);
+    Route::apiResource('collections', CollectionController::class)->only(['index', 'store', 'update', 'destroy']);
     Route::post('/collections/{collection}/products', [CollectionController::class, 'addProduct']);
     Route::delete('/collections/{collection}/products/{product}', [CollectionController::class, 'removeProduct']);
 });

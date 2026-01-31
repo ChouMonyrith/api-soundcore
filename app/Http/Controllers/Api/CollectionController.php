@@ -8,8 +8,9 @@ use App\Models\Collection;
 use App\Models\Product;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
-
+use Illuminate\Support\Facades\Gate;
 use App\Http\Resources\CollectionResource;
+use App\Http\Resources\ProductResource;
 
 class CollectionController extends Controller
 {
@@ -22,15 +23,29 @@ class CollectionController extends Controller
     public function show(Collection $collection)
     {
         // Allow if public or owned by user
-        if (!$collection->is_public && $collection->user_id !== Auth::id()) {
+        $user = auth('sanctum')->user();
+
+        if (Gate::forUser($user)->denies('view', $collection)) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
-
+        
         return new CollectionResource($collection->load(['products', 'user']));
+    }
+
+    public function sounds(Collection $collection)
+    {
+        // Allow if public or owned by user
+        $user = auth('sanctum')->user();
+        if (Gate::forUser($user)->denies('view', $collection)) {
+             return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        return ProductResource::collection($collection->products);
     }
 
     public function store(Request $request)
     {
+        $this->authorize('create', Collection::class);
        
         $request->validate([
             'name' => 'required|string|max:255',
@@ -56,9 +71,7 @@ class CollectionController extends Controller
 
     public function update(Request $request, Collection $collection)
     {
-        if ($collection->user_id !== Auth::id()) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
+        $this->authorize('update', $collection);
 
         $data = $request->only(['name', 'description', 'is_public']);
 
@@ -76,9 +89,7 @@ class CollectionController extends Controller
 
     public function destroy(Collection $collection)
     {
-        if ($collection->user_id !== Auth::id()) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
+        $this->authorize('delete', $collection);
 
         $collection->delete();
         return response()->json(['message' => 'Collection deleted']);
@@ -86,9 +97,7 @@ class CollectionController extends Controller
 
     public function addProduct(Request $request, Collection $collection)
     {
-        if ($collection->user_id !== Auth::id()) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
+        $this->authorize('addProduct', $collection);
 
         $request->validate(['product_id' => 'required|exists:products,id']);
         
@@ -98,9 +107,7 @@ class CollectionController extends Controller
 
     public function removeProduct(Collection $collection, Product $product)
     {
-        if ($collection->user_id !== Auth::id()) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
+        $this->authorize('removeProduct', $collection);
 
         $collection->products()->detach($product->id);
         return response()->json(['message' => 'Product removed from collection']);
