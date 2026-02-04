@@ -24,6 +24,57 @@ class ProfileController extends Controller
         return new PublicProfileResource($profile);
     }
 
+    public function update(Request $request)
+    {
+        $user = $request->user();
+        
+        if (!$user->producerProfile) {
+            return response()->json(['message' => 'Producer profile not found'], 404);
+        }
+
+        $request->validate([
+            'display_name' => 'required|string|max:255',
+            'bio' => 'nullable|string',
+            'location' => 'nullable|string|max:255',
+            'website' => 'nullable|url|max:255',
+            'social_links' => 'nullable|array',
+            'avatar' => 'nullable|image|max:2048', // 2MB Max
+            'cover_image' => 'nullable|image|max:4096', // 4MB Max
+        ]);
+
+        $profile = $user->producerProfile;
+
+        // Handle Avatar Upload
+        if ($request->hasFile('avatar')) {
+            // Delete old avatar if exists
+            if ($profile->avatar_path) {
+                \Illuminate\Support\Facades\Storage::delete($profile->avatar_path);
+            }
+            $path = $request->file('avatar')->store('avatars', 'public');
+            $profile->avatar_path = $path;
+        }
+
+        // Handle Cover Image Upload
+        if ($request->hasFile('cover_image')) {
+            // Delete old cover if exists
+             if ($profile->cover_path) {
+                \Illuminate\Support\Facades\Storage::delete($profile->cover_path);
+            }
+            $path = $request->file('cover_image')->store('covers', 'public');
+            $profile->cover_path = $path;
+        }
+
+        $profile->update([
+            'display_name' => $request->display_name,
+            'bio' => $request->bio,
+            'location' => $request->location,
+            'website' => $request->website,
+            'social_links' => $request->social_links,
+        ]);
+
+        return new PublicProfileResource($profile);
+    }
+
     // GET /api/profiles/{id}
     public function show($id)
     {

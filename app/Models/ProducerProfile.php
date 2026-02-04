@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 class ProducerProfile extends Model
 {
     use HasFactory;
-    protected $fillable = ['user_id', 'display_name', 'bio', 'avatar_path', 'sales_count', 'status','cover_image_path','social_links','location','website'];
+    protected $fillable = ['user_id', 'display_name', 'bio', 'avatar_path', 'sales_count', 'status','cover_path','social_links','location','website'];
 
     protected $casts = [
         'social_links' => 'array',

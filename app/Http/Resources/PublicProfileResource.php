@@ -22,8 +22,8 @@ class PublicProfileResource extends JsonResource
             'bio' => $this->bio,
             
             // Images
-            'avatar' => $this->avatar_path ? Storage::url($this->avatar_path) : null,
-            'cover_image' => $this->cover_image_path ? Storage::url($this->cover_image_path) : null,
+            'avatar' => $this->avatar_path ? asset('/api/storage/' . $this->avatar_path) : null,
+            'cover_image' => $this->cover_path ? asset('/api/storage/' . $this->cover_path) : null,
             
             // Stats
             'stats' => [

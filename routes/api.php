@@ -86,6 +86,7 @@ Route::middleware(['auth:sanctum'])->group(function (){
     //Profile
     Route::get('/profiles/me', [ProfileController::class, 'me']);
     Route::post('/profiles/{id}/follow', [ProfileController::class, 'toggleFollow']);
+    Route::post('/profiles/update', [ProfileController::class, 'update']);
 
     // Likes
     Route::post('/products/{product}/like', [LikeController::class, 'toggleLike']);
