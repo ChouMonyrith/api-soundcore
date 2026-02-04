@@ -102,4 +102,50 @@ class DashboardController extends Controller
 
         return response()->json($recentSales);
     }
+
+    public function salesChart(Request $request)
+    {
+        $user = $request->user();
+
+        if (!$user->producerProfile) {
+            return response()->json(['message' => 'User is not a producer'], 403);
+        }
+
+        $producerId = $user->producerProfile->id;
+
+        // Fetch sales grouped by month for the current year
+        $salesData = OrderItem::whereHas('order', function ($query) {
+                $query->where('status', 'paid');
+            })
+            ->whereHas('product', function ($query) use ($producerId) {
+                $query->where('producer_profile_id', $producerId);
+            })
+            ->selectRaw('MONTH(created_at) as month, SUM(price) as total')
+            ->whereYear('created_at', date('Y'))
+            ->groupBy('month')
+            ->orderBy('month')
+            ->get();
+
+        // Format data for the chart (Jan -> Dec)
+        $formattedData = [];
+        $months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+        // Initialize with 0
+        foreach ($months as $month) {
+            $formattedData[] = [
+                'month' => $month,
+                'sales' => 0
+            ];
+        }
+
+        foreach ($salesData as $data) {
+            // month is 1-indexed from MySQL
+            $index = $data->month - 1;
+            if (isset($formattedData[$index])) {
+                $formattedData[$index]['sales'] = (float) $data->total;
+            }
+        }
+
+        return response()->json($formattedData);
+    }
 }

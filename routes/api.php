@@ -72,6 +72,7 @@ Route::middleware(['auth:sanctum'])->group(function (){
     // Dashboard
     Route::get('dashboard/stats', [\App\Http\Controllers\Api\DashboardController::class, 'stats']);
     Route::get('dashboard/recent-sales', [\App\Http\Controllers\Api\DashboardController::class, 'recentSales']);
+    Route::get('dashboard/sales-chart', [\App\Http\Controllers\Api\DashboardController::class, 'salesChart']);
 
 
     // Orders
